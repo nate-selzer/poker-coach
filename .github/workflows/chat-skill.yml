@@ -1,0 +1,38 @@
+name: chat-skill
+
+# Builds the claude.ai version of the skill (a Linux TexasSolver build plus the
+# scripts), plays a hand with it, and publishes it on the chat-skill release.
+on:
+  push:
+    branches: [main]
+    paths: [skill/**, solver/**, tools/**, LICENSE, .github/workflows/chat-skill.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build TexasSolver
+        run: |
+          sudo apt-get update -q && sudo apt-get install -yq cmake build-essential xz-utils zip
+          solver/build.sh "$RUNNER_TEMP/ts"
+          file "$RUNNER_TEMP/ts/TexasSolver/build/console_solver"
+
+      - name: Package
+        run: tools/package_chat.sh "$RUNNER_TEMP/ts/TexasSolver/build/console_solver" "$RUNNER_TEMP/ts/TexasSolver/resources" dist/poker-coach-chat.zip
+
+      - name: Smoke test
+        run: python3 tools/smoke_test.py dist/poker-coach-chat.zip
+
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view chat-skill >/dev/null 2>&1 || gh release create chat-skill --title "Claude chat skill" \
+            --notes "Upload poker-coach-chat.zip in claude.ai under Settings → Capabilities → Skills. Rebuilt on every push to main."
+          gh release upload chat-skill dist/poker-coach-chat.zip --clobber
