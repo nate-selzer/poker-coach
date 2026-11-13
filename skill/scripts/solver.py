@@ -58,8 +58,10 @@ STREETS = ["flop", "turn", "river"]
 # streets in the same solve only shape its values, so they get a single bet
 # size and no raises to keep the tree small (each is re-solved with the full
 # menu once it is reached). Bets that commit over 67% of a player's chips become all-in.
+# POKER_COACH_FLOP_BETS trims the flop menu (chat uses one size to fit its slower sandbox).
+FLOP_BETS = [int(x) for x in os.environ.get("POKER_COACH_FLOP_BETS", "33,75").split(",")]
 ROOT_SIZES = {
-    "flop": {"bet": [33, 75], "raise": [60]},
+    "flop": {"bet": FLOP_BETS, "raise": [60]},
     "turn": {"bet": [50, 100], "raise": [60]},
     "river": {"bet": [50, 100], "raise": [60]},
 }
@@ -117,7 +119,7 @@ def solve(board, pot, stack, ranges, floor, out_path, threads=None):
         f"set_thread_num {threads or os.cpu_count() or 2}",
         f"set_accuracy {ACCURACY}",
         f"set_max_iteration {MAX_ITERATIONS}",
-        "set_print_interval 50",
+        "set_print_interval 10",  # also how often it checks accuracy to stop early
         "set_use_isomorphism 1",
         "start_solve",
         "set_dump_rounds 1",
