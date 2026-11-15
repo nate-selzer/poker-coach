@@ -33,6 +33,7 @@ import drills as Dr  # noqa: E402
 import mixing as Mx  # noqa: E402
 import ranges as R  # noqa: E402
 import solver as S  # noqa: E402
+import table as T  # noqa: E402
 from cards import DECK, RANK_VAL, describe, equity, eval_hand, hand_class  # noqa: E402
 
 DATA_DIR = os.path.expanduser(os.environ.get("POKER_COACH_DIR", "~/workspace/poker-coach"))
@@ -594,6 +595,10 @@ def render(st):
     out.append(f"Pot: {fmt(pot(st))} | you have {fmt(behind(st, hero))} behind | villain has {fmt(behind(st, OTHER[hero]))}")
     _, opts, _ = current_options(st)
     out.append("YOUR OPTIONS: " + " | ".join(f"[{o['id']}] {o['label']}" for o in opts))
+    title = f"Heads-up hand #{st['hand_no']} · {st['street']}" + (f" · drill: {st['drill']}" if st.get("drill") else "")
+    out.append(T.line(title, fmt(pot(st)), ["SB", "BB"], hero, st["history"], st["board"], st["cards"][hero],
+                      fmt(behind(st, hero)), describe(st["cards"][hero], st["board"]) if st["board"] else "",
+                      labels={"SB": "SB / button"}))
     return "\n".join(out)
 
 

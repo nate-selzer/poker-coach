@@ -17,6 +17,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import ring_ranges as RR  # noqa: E402
 import solver as S  # noqa: E402
+import table as T  # noqa: E402
 from cards import DECK, RANK_VAL, describe, eval_hand, hand_class  # noqa: E402
 
 import coach as C  # noqa: E402  (shared persistence, logging, formatting)
@@ -809,6 +810,9 @@ def render(st):
     if ctx[0] == "mw":
         out.append("(multiway pot: no solver; grades are approximate)")
     out.append("YOUR OPTIONS: " + " | ".join(f"[{o['id']}] {o['label']}" for o in opts))
+    out.append(T.line(f"{n}-max hand #{st['hand_no']} · {st['street']}", fmt(pot(st)), st["seats"], hero, st["history"],
+                      st["board"], st["cards"][hero], fmt(behind(st, hero)),
+                      describe(st["cards"][hero], st["board"]) if st["board"] else ""))
     return "\n".join(out)
 
 

@@ -1,0 +1,11 @@
+(function(){
+var css='.pk{background:var(--surface-1);border-radius:12px;padding:1rem 1.25rem}.pk .r{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}.pk .m{font-size:13px;color:var(--text-secondary)}.pk .l{font-size:12px;color:var(--text-muted);margin-bottom:6px}.pk .cs{display:flex;gap:8px}.pk .c{width:46px;height:64px;border-radius:6px;border:0.5px solid var(--border-strong);background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:500;color:var(--text-primary)}.pk .c.red{color:#A32D2D}.pk .c.e{border-style:dashed;background:none}.pk .ss{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin:12px 0 16px}.pk .s{font-size:13px;padding:6px 10px;border-radius:var(--radius);border:0.5px solid var(--border);background:var(--surface-2)}.pk .s.h{border:2px solid var(--border-accent)}.pk .s.o{color:var(--text-muted)}.pk .bet{color:var(--text-danger)}';
+if(!document.getElementById('pk-css')){var st=document.createElement('style');st.id='pk-css';st.textContent=css;document.head.appendChild(st);}
+var SUIT={h:'♥',d:'♦',s:'♠',c:'♣'};
+function esc(x){return String(x).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function card(c){if(!c)return '<div class="c e"></div>';var s=c.slice(-1);return '<div class="c'+(s=='h'||s=='d'?' red':'')+'">'+esc(c.slice(0,-1))+'<small>'+SUIT[s]+'</small></div>';}
+function draw(el){var d=JSON.parse(el.getAttribute('data-s'));var b=d.b||[];var bs='';for(var i=0;i<5;i++)bs+=card(b[i]);
+var ss=d.seats.map(function(s){return '<div class="s'+(s.h?' h':'')+(s.o?' o':'')+'">'+esc(s.n)+'<br><span class="'+(s.r?'bet':'m')+'">'+esc(s.a||'')+'</span></div>';}).join('');
+el.className='pk';el.innerHTML='<div class="r"><span class="m">'+esc(d.t)+'</span><span class="m">Pot <b style="font-weight:500;color:var(--text-primary)">'+esc(d.pot)+'</b> bb</span></div><div class="ss">'+ss+'</div><div class="r" style="align-items:flex-end"><div><div class="l">Board</div><div class="cs">'+bs+'</div></div><div><div class="l">Your hand · '+esc(d.st)+' bb</div><div class="cs">'+(d.hand||[]).map(card).join('')+'</div></div></div>'+(d.d?'<div class="m" style="margin-top:12px">'+esc(d.d)+'</div>':'');}
+var els=document.querySelectorAll('[data-s]');for(var i=0;i<els.length;i++)draw(els[i]);
+})();
