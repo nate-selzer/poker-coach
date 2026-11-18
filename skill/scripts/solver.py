@@ -66,8 +66,7 @@ ROOT_SIZES = {
     "river": {"bet": [50, 100], "raise": [60]},
 }
 LATER_SIZES = {"bet": [75], "donk": [75]}
-# POKER_COACH_FAST=1 (chat) leaves river betting out of flop solves: about 2.5x
-# faster, at the cost of flop values that ignore river bluffs and value bets.
+# Chat sets POKER_COACH_FAST=1: no river bets in flop solves, ~2.5x faster, slightly rougher flop values.
 FAST = os.environ.get("POKER_COACH_FAST") == "1"
 RAISE_LIMIT = int(os.environ.get("POKER_COACH_RAISE_LIMIT", "2"))  # per street
 # The solver rounds bet sizes to whole chips, so solve in tenths of a bb.
