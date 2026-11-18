@@ -66,11 +66,31 @@ ROOT_SIZES = {
     "river": {"bet": [50, 100], "raise": [60]},
 }
 LATER_SIZES = {"bet": [75], "donk": [75]}
+# POKER_COACH_FAST=1 (chat) leaves river betting out of flop solves: about 2.5x
+# faster, at the cost of flop values that ignore river bluffs and value bets.
+FAST = os.environ.get("POKER_COACH_FAST") == "1"
 RAISE_LIMIT = int(os.environ.get("POKER_COACH_RAISE_LIMIT", "2"))  # per street
 # The solver rounds bet sizes to whole chips, so solve in tenths of a bb.
 CHIPS_PER_BB = 10
 ACCURACY = float(os.environ.get("POKER_COACH_ACCURACY", "3.0"))  # % of pot
 MAX_ITERATIONS = int(os.environ.get("POKER_COACH_ITERATIONS", "100"))
+
+
+def cpu_budget():
+    """CPUs this process may actually use: affinity and cgroup quota, not the host's count.
+
+    Containers often report every host CPU while capping the quota to one or two;
+    starting a thread per reported CPU then makes the solver thrash.
+    """
+    n = len(os.sched_getaffinity(0)) if hasattr(os, "sched_getaffinity") else (os.cpu_count() or 2)
+    try:
+        with open("/sys/fs/cgroup/cpu.max") as f:  # cgroup v2: "<quota> <period>" or "max <period>"
+            quota, period = f.read().split()
+        if quota != "max":
+            n = min(n, max(1, int(int(quota) / int(period))))
+    except (OSError, ValueError):
+        pass
+    return max(1, n)
 
 
 def range_string(weights, floor=()):
@@ -102,6 +122,8 @@ def solve(board, pot, stack, ranges, floor, out_path, threads=None):
     root_street = STREETS[len(board) - 3]
     for street in STREETS[len(board) - 3:]:
         is_root = street == root_street
+        if FAST and root_street == "flop" and street == "river":
+            continue  # no river bets: the river is checked down
         kinds = ROOT_SIZES[street] if is_root else LATER_SIZES
         for side in ("oop", "ip"):
             for kind, sizes in kinds.items():
@@ -116,7 +138,7 @@ def solve(board, pot, stack, ranges, floor, out_path, threads=None):
         f"set_allin_threshold {0.67 * (stack + pot / 2) / stack:.4f}",
         f"set_raise_limit {RAISE_LIMIT}",
         "build_tree",
-        f"set_thread_num {threads or os.cpu_count() or 2}",
+        f"set_thread_num {threads or cpu_budget()}",
         f"set_accuracy {ACCURACY}",
         f"set_max_iteration {MAX_ITERATIONS}",
         "set_print_interval 10",  # also how often it checks accuracy to stop early

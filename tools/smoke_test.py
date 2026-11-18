@@ -26,7 +26,7 @@ def main(zip_path):
         for f in files:
             os.chmod(os.path.join(dirpath, f), 0o444)
     env = dict(os.environ, POKER_COACH_DIR=os.path.join(root, "data"),
-               POKER_COACH_FLOP_BETS="33", POKER_COACH_ACCURACY="5")  # as chat.md runs it
+               POKER_COACH_FAST="1", POKER_COACH_FLOP_BETS="33", POKER_COACH_ACCURACY="5")  # as chat.md runs it
     env.pop("TEXASSOLVER_DIR", None)
 
     def run(*args):
@@ -39,6 +39,7 @@ def main(zip_path):
             sys.exit(f"command failed: {args}")
         return out.stdout
 
+    run("doctor")
     run("drill", "strong")
     out = run("new")
     graded_postflop = False

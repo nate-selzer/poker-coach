@@ -18,6 +18,7 @@ Commands:
   table <2|4|6>        heads-up (default), 4-max or 6-max; new/act/next/status follow it
   export [dir]        save progress to <dir>/poker-coach-save.tar.gz
   import <file>       restore progress from a save made by export
+  doctor              report CPUs, memory and solver speed here
 """
 import hashlib
 import json
@@ -877,6 +878,30 @@ def cmd_export(args):
     print(f"Saved {len(names)} files to {path}")
 
 
+def cmd_doctor(args):
+    """Report CPUs, memory and solver speed in this environment (for tuning slow sandboxes)."""
+    import tempfile
+    def read(path):
+        try:
+            with open(path) as f:
+                return f.read().strip()
+        except OSError:
+            return "n/a"
+    print(f"os.cpu_count: {os.cpu_count()}")
+    if hasattr(os, "sched_getaffinity"):
+        print(f"affinity CPUs: {len(os.sched_getaffinity(0))}")
+    print(f"cgroup cpu.max: {read('/sys/fs/cgroup/cpu.max')}")
+    print(f"cgroup memory.max: {read('/sys/fs/cgroup/memory.max')}")
+    print(f"solver threads used: {S.cpu_budget()} | fast flop trees: {S.FAST} | flop bets: {S.FLOP_BETS} | accuracy: {S.ACCURACY}%")
+    print(f"solver: {S.solver_paths()[0]}")
+    ranges = R.postflop_ranges("srp")
+    with tempfile.TemporaryDirectory() as d:
+        for board in (["Qc", "8h", "2h", "Kd", "8d"], ["Qc", "8h", "2h", "Kd"]):
+            t = time.time()
+            S.solve(board, 5.0, 97.5, ranges, (), os.path.join(d, "doctor.json"))
+            print(f"{['turn', 'river'][len(board) - 4]} solve: {time.time() - t:.1f}s")
+
+
 def cmd_import(args):
     """Restore progress files from a save made by `export`, replacing the current ones."""
     import tarfile
@@ -898,7 +923,7 @@ def cmd_import(args):
 
 COMMANDS = {"new": cmd_new, "act": cmd_act, "next": cmd_next, "status": cmd_status,
             "note": cmd_note, "stats": cmd_stats, "presolve": cmd_presolve, "notes": cmd_notes, "drill": cmd_drill,
-            "table": cmd_table, "export": cmd_export, "import": cmd_import}
+            "table": cmd_table, "export": cmd_export, "import": cmd_import, "doctor": cmd_doctor}
 RING_COMMANDS = ("new", "act", "next", "status")
 
 if __name__ == "__main__":
